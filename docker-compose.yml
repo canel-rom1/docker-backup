@@ -1,0 +1,28 @@
+version: '3.7'
+
+services:
+  wp_backup:
+    image: canelrom1/wordpress-backup:latest
+    container_name: wordpress-backup
+#    build:
+#      context: ./src
+#    restart: on-failure
+    networks:
+      - wordpress_lan
+    volumes:
+      - wordpress_t-html:/wp-site-html
+    environment:
+      BACKUP_TIME: "57 * * * *"
+      BACKUP_MAIL: "root"
+      MYSQL_HOST: "wordpress_db_1"
+      MYSQL_DATABASE: "wordpress"
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: "dbpass"
+
+networks:
+  wordpress_lan:
+    external: True
+
+volumes:
+  wordpress_t-html:
+    external: True
