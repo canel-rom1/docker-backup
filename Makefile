@@ -1,6 +1,6 @@
 docker_organisation=canelrom1
 docker_project=docker-backup
-docker_tag=$(shell date +%y%m%d.%H%M%S)
+docker_tag=$(shell date +%Y%m%d.%H%M%S)
 
 all: build
 
