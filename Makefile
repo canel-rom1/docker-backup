@@ -1,5 +1,5 @@
 docker_organisation=canelrom1
-docker_project=wordpress-backup
+docker_project=docker-backup
 docker_tag=$(shell date +%y%m%d.%H%M%S)
 
 all: build
