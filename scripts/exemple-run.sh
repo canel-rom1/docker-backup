@@ -1,5 +1,7 @@
 #!/bin/bash
 docker run --rm \
+        --memory=5g \
+        --cpus=4 \
         --network=wordpress_lan \
         -v wordpress_t-html:/volume-backup \
         -v $(pwd):/local-output \
