@@ -1,17 +1,16 @@
 #!/bin/bash
 set -e
-#PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 
 TMP_DIR="/tmp"
-WP_HTML_CONTENT_DIR="/volume-backup"
+VOLUME_BACKUP_DIR="/volume-backup"
 LOCAL_OUTPUT_DIR="/local-output"
-GD_BAK_DIR="backup-wp" #A supprimer
 
 echo "Welcome to WordPress Backup & Restore"
-
 usage()
 {
-        echo "Usage: $(basename $0)"
+cat << EOF
+Usage: $(basename $0)
+EOF
 }
 
 # Select arguments
@@ -78,6 +77,9 @@ do
                 -l|--local-output)
                         LOCAL_OUTPUT=1
                         ;;
+                -m|--dump-mysql)
+                        DUMP_MYSQL=1
+                        ;;
                 -p|--db-password)
                         shift
                         arg_pwd="${1}"
@@ -101,6 +103,9 @@ do
                         fi
 
                         MYSQL_USER=${arg_user}
+                        ;;
+                -v|--copy-volume)
+                        COPY_VOLUME=1
                         ;;
                 "")
                         ;;
@@ -161,29 +166,35 @@ case ${script_cmd} in
         backup)
                 echo "Start Backup"
 
-                echo "Dump database"
-                mysqldump -h"${MYSQL_HOST}" -u"${MYSQL_USER}" --password="${MYSQL_PASSWORD}" "${MYSQL_DATABASE}" > "${SQL_BAK_FILE}"
-
-                if [ $? -ne 0 ]
+                if [ -n "${DUMP_MYSQL}" ]
                 then
-                        echo "Error: Can't dump database"
-                        exit 1
+                        echo "Dump database"
+                        mysqldump -h"${MYSQL_HOST}" -u"${MYSQL_USER}" --password="${MYSQL_PASSWORD}" "${MYSQL_DATABASE}" > "${SQL_BAK_FILE}"
+
+                        if [ $? -ne 0 ]
+                        then
+                                echo "Error: Can't dump database"
+                                exit 1
+                        fi
                 fi
 
-                echo "Backup HTML content"
-                cd "${WP_HTML_CONTENT_DIR}"
-                tar -czf "${WP_BAK_TAR}" *
-                cd - > /dev/null
-
-                echo "Create archive"
-                cd "${TMP_DIR}"
-                tar -cf $(basename "${ALL_BAK_TAR}") $(basename "${WP_BAK_TAR}") $(basename "${SQL_BAK_FILE}")
-                cd - > /dev/null
-
-                if [ -n "${LOCAL_OUTPUT}" ]
+                if [ -n "${COPY_VOLUME}" ]
                 then
-                        echo "Copy backup on host"
-                        cp "${ALL_BAK_TAR}" "${LOCAL_OUTPUT_DIR}"
+                        echo "Backup volume content"
+                        cd "${VOLUME_BACKUP_DIR}"
+                        tar -czf "${WP_BAK_TAR}" *
+                        cd - > /dev/null
+
+                        echo "Create archive"
+                        cd "${TMP_DIR}"
+                        tar -cf $(basename "${ALL_BAK_TAR}") $(basename "${WP_BAK_TAR}") $(basename "${SQL_BAK_FILE}")
+                        cd - > /dev/null
+
+                        if [ -n "${LOCAL_OUTPUT}" ]
+                        then
+                                echo "Copy backup on host"
+                                cp "${ALL_BAK_TAR}" "${LOCAL_OUTPUT_DIR}"
+                        fi
                 fi
 
                 if [ -n "${DRIVE_OUTPUT}" ]
@@ -191,10 +202,10 @@ case ${script_cmd} in
                         echo "Copy backup on Google Drive"
                         if [ -n "${DRIVE_PARENTID}" ]
                         then
-                                gdrive upload --parent "${DRIVE_PARENTID}" "${ALL_BAK_TAR}"
+                                gdrive upload --no-progress --parent "${DRIVE_PARENTID}" "${ALL_BAK_TAR}"
                         elif [ -n "${DRIVE_FILEID}" ]
                         then
-                                gdrive update ${DRIVE_FILEID} ${ALL_BAK_TAR}
+                                gdrive update --no-progress ${DRIVE_FILEID} ${ALL_BAK_TAR}
                         else
                                 echo "Error: Google Drive missing arguments"
                         fi
