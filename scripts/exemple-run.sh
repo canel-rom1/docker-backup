@@ -5,14 +5,28 @@ docker run --rm \
         --network=wordpress_lan \
         -v wordpress_t-html:/volume-backup \
         -v $(pwd):/local-output \
-        -v /home/romain/.gdrive/token_v2.json:/root/.gdrive/token_v2.json \
         canelrom1/docker-backup:latest \
-        backup  -h wordpress_db_1 \
-                -d wordpress \
-                -u user \
-                -p dbpass \
-                -g \
-                -f "1Y6MlVwuIKT4we-9p_jfNlPB_Lbc1OWDh" \
+        backup  --dump-mysql \
+                --db-host wordpress_db_1 \
+                --db-name wordpress \
+                --db-user user \
+                --db-password dbpass \
+                --copy-local \
                 tt_bak
-#Dossier parentID
-#-e 1lSREdmX36Yqh7wBU5fNQWd4ENEHk91Zd \
+#docker run --rm \
+#        --memory=5g \
+#        --cpus=4 \
+#        --network=wordpress_lan \
+#        -v wordpress_t-html:/volume-backup \
+#        -v $(pwd):/local-output \
+#        -v /home/romain/.gdrive/token_v2.json:/root/.gdrive/token_v2.json \
+#        canelrom1/docker-backup:latest \
+#        backup  --copy-volume \
+#                --dump-mysql \
+#                --db-host wordpress_db_1 \
+#                --db-name wordpress \
+#                --db-user user \
+#                --db-password dbpass \
+#                --copy-gdrive \
+#                --gdrive-fileid "1Y6MlVwuIKT4we-9p_jfNlPB_Lbc1OWDh" \
+#                tt_bak

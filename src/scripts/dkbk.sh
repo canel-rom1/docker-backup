@@ -34,7 +34,7 @@ do
 
                         MYSQL_DATABASE="${arg_name}"
                         ;;
-                -e|--google-parentid)
+                -e|--gdrive-parentid)
                         shift
                         arg_pid="${1}"
                         if [ "${arg_pid:0:1}" = '-' ]
@@ -46,7 +46,7 @@ do
 
                         DRIVE_PARENTID="${arg_pid}"
                         ;;
-                -f|--google-fileid)
+                -f|--gdrive-fileid)
                         shift
                         arg_fid="${1}"
                         if [ "${arg_fid:0:1}" = '-' ]
@@ -58,11 +58,11 @@ do
 
                         DRIVE_FILEID="${arg_fid}"
                         ;;
-                -g|--google-drive)
+                -g|--copy-gdrive)
                         echo "Debug: Goggle drive"
                         DRIVE_OUTPUT=1
                         ;;
-                -h|--host)
+                -h|--db-host)
                         shift
                         arg_host="${1}"
                         if [ ${arg_host:0:1} = '-' ]
@@ -74,7 +74,7 @@ do
 
                         MYSQL_HOST=${arg_host}
                         ;;
-                -l|--local-output)
+                -l|--copy-local)
                         LOCAL_OUTPUT=1
                         ;;
                 -m|--dump-mysql)
@@ -125,11 +125,13 @@ then
         exit 1
 fi
 BAK_NAME="${1}"
-SQL_BAK_FILE="${TMP_DIR}/${BAK_NAME}-db-$(date +%y%m%d-%H%M%S).sql"
-WP_BAK_TAR="${TMP_DIR}/${BAK_NAME}-vols.$(date +%y%m%d-%H%M%S).tgz"
+INPUT_TAR="${TMP_DIR}/input_tar"
+[ -d "${INPUT_TAR}" ] || mkdir "${INPUT_TAR}"
+SQL_BAK_FILE="${INPUT_TAR}/${BAK_NAME}-db.$(date +%Y%m%d-%H%M%S).sql"
+VOL_BAK_TAR="${INPUT_TAR}/${BAK_NAME}-vols.$(date +%Y%m%d-%H%M%S).tgz"
 ALL_BAK_TAR="${TMP_DIR}/${BAK_NAME}.tar"
 
-if [ -z "${MYSQL_HOST}" ]
+if [ -n "${DUMP_MYSQL}" -a -z "${MYSQL_HOST}" ]
 then
         echo "Error: MYSQL_HOST variable not set"
         usage
@@ -137,7 +139,7 @@ then
 fi
 echo "Debug: host = ${MYSQL_HOST}"
 
-if [ -z "${MYSQL_USER}" ]
+if [ -n "${DUMP_MYSQL}" -a -z "${MYSQL_USER}" ]
 then
         echo "Error: MYSQL_USER variable not set"
         usage
@@ -145,7 +147,7 @@ then
 fi
 echo "Debug: user = ${MYSQL_USER}"
 
-if [ -z "${MYSQL_DATABASE}" ]
+if [ -n "${DUMP_MYSQL}" -a -z "${MYSQL_DATABASE}" ]
 then
         echo "Error: MYSQL_DATABASE variable not set"
         usage
@@ -153,7 +155,7 @@ then
 fi
 echo "Debug: database = ${MYSQL_DATABASE}"
 
-if [ -z "${MYSQL_PASSWORD}" ]
+if [ -n "${DUMP_MYSQL}" -a -z "${MYSQL_PASSWORD}" ]
 then
         echo "Error: MYSQL_PASSWORD variable not set"
         usage
@@ -176,25 +178,27 @@ case ${script_cmd} in
                                 echo "Error: Can't dump database"
                                 exit 1
                         fi
+                        SQL_BAK="${SQL_BAK_FILE}"
                 fi
 
                 if [ -n "${COPY_VOLUME}" ]
                 then
                         echo "Backup volume content"
                         cd "${VOLUME_BACKUP_DIR}"
-                        tar -czf "${WP_BAK_TAR}" *
+                        tar -czf "${VOL_BAK_TAR}" *
                         cd - > /dev/null
+                        VOL_BAK="${VOL_BAK_FILE}"
+                fi
 
-                        echo "Create archive"
-                        cd "${TMP_DIR}"
-                        tar -cf $(basename "${ALL_BAK_TAR}") $(basename "${WP_BAK_TAR}") $(basename "${SQL_BAK_FILE}")
-                        cd - > /dev/null
+                echo "Create archive"
+                cd "${INPUT_TAR}"
+                tar -cf "${ALL_BAK_TAR}" *
+                cd - > /dev/null
 
-                        if [ -n "${LOCAL_OUTPUT}" ]
-                        then
-                                echo "Copy backup on host"
-                                cp "${ALL_BAK_TAR}" "${LOCAL_OUTPUT_DIR}"
-                        fi
+                if [ -n "${LOCAL_OUTPUT}" ]
+                then
+                        echo "Copy backup on host"
+                        cp "${ALL_BAK_TAR}" "${LOCAL_OUTPUT_DIR}"
                 fi
 
                 if [ -n "${DRIVE_OUTPUT}" ]
@@ -212,7 +216,7 @@ case ${script_cmd} in
                 fi
 
                 echo "Clean archive"
-                rm -f "${SQL_BAK_FILE}" "${WP_BAK_TAR}" "${ALL_BAK_TAR}"
+                rm -f "${SQL_BAK_FILE}" "${VOL_BAK_TAR}" "${ALL_BAK_TAR}"
                 ;;
         help)
                 usage

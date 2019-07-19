@@ -1,3 +1,6 @@
 *.swp
+*.tar
+*.tar.*
+*.tgz
 
 token_v2.json*
