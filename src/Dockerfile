@@ -7,12 +7,17 @@ LABEL description="Backup for WordPress"
 RUN apt-get update \
  && apt-get -y -q --no-install-recommends \
             install ca-certificates \
-                    mysql-client \
+                    mongo-tools \
+                    mariadb-client \
                     wget \
  && apt-get clean \
- && rm -rf /var/lib/apt/lists/* \
- &&  wget -O /usr/local/bin/gdrive https://drive.google.com/uc\?id\=1Ej8VgsW5RgK66Btb9p74tSdHMH3p4UNb \
- && chmod +x /usr/local/bin/gdrive
+ && rm -rf /var/lib/apt/lists/*
+# && rm -rf /var/lib/apt/lists/* \
+# &&  wget -O /usr/local/bin/gdrive https://drive.google.com/uc\?id\=1Ej8VgsW5RgK66Btb9p74tSdHMH3p4UNb \
+# && chmod +x /usr/local/bin/gdrive
+
+COPY ./bin/gdrive /usr/local/bin/gdrive
+RUN chmod +x /usr/local/bin/gdrive
 
 RUN mkdir /volume-backup /root/.gdrive
 

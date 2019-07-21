@@ -32,7 +32,7 @@ do
                                 exit 1
                         fi
 
-                        MYSQL_DATABASE="${arg_name}"
+                        DB_NAME="${arg_name}"
                         ;;
                 -e|--gdrive-parentid)
                         shift
@@ -72,13 +72,16 @@ do
                                 exit 1
                         fi
 
-                        MYSQL_HOST=${arg_host}
+                        DB_HOST=${arg_host}
                         ;;
                 -l|--copy-local)
                         LOCAL_OUTPUT=1
                         ;;
                 -m|--dump-mysql)
                         DUMP_MYSQL=1
+                        ;;
+                -o|--dump-mongo)
+                        DUMP_MONGO=1
                         ;;
                 -p|--db-password)
                         shift
@@ -90,7 +93,7 @@ do
                                 exit 1
                         fi
 
-                        MYSQL_PASSWORD=${arg_pwd}
+                        DB_PASSWORD=${arg_pwd}
                         ;;
                 -u|--db-user)
                         shift
@@ -102,7 +105,7 @@ do
                                 exit 1
                         fi
 
-                        MYSQL_USER=${arg_user}
+                        DB_USER=${arg_user}
                         ;;
                 -v|--copy-volume)
                         COPY_VOLUME=1
@@ -128,40 +131,41 @@ BAK_NAME="${1}"
 INPUT_TAR="${TMP_DIR}/input_tar"
 [ -d "${INPUT_TAR}" ] || mkdir "${INPUT_TAR}"
 SQL_BAK_FILE="${INPUT_TAR}/${BAK_NAME}-db.$(date +%Y%m%d-%H%M%S).sql"
+MDB_BAK_DIR="${INPUT_TAR}/${BAK_NAME}-db-$(date +%Y%m%d-%H%M%S)"
 VOL_BAK_TAR="${INPUT_TAR}/${BAK_NAME}-vols.$(date +%Y%m%d-%H%M%S).tgz"
 ALL_BAK_TAR="${TMP_DIR}/${BAK_NAME}.tar"
 
-if [ -n "${DUMP_MYSQL}" -a -z "${MYSQL_HOST}" ]
+if [ -n "${DUMP_MYSQL}" -a -z "${DB_HOST}" ]
 then
-        echo "Error: MYSQL_HOST variable not set"
+        echo "Error: DB_HOST variable not set"
         usage
         exit 1
 fi
-echo "Debug: host = ${MYSQL_HOST}"
+echo "Debug: host = ${DB_HOST}"
 
-if [ -n "${DUMP_MYSQL}" -a -z "${MYSQL_USER}" ]
+if [ -n "${DUMP_MYSQL}" -a -z "${DB_USER}" ]
 then
-        echo "Error: MYSQL_USER variable not set"
+        echo "Error: DB_USER variable not set"
         usage
         exit 1
 fi
-echo "Debug: user = ${MYSQL_USER}"
+echo "Debug: user = ${DB_USER}"
 
-if [ -n "${DUMP_MYSQL}" -a -z "${MYSQL_DATABASE}" ]
+if [ -n "${DUMP_MYSQL}" -a -z "${DB_NAME}" ]
 then
-        echo "Error: MYSQL_DATABASE variable not set"
+        echo "Error: DB_NAME variable not set"
         usage
         exit 1
 fi
-echo "Debug: database = ${MYSQL_DATABASE}"
+echo "Debug: database = ${DB_NAME}"
 
-if [ -n "${DUMP_MYSQL}" -a -z "${MYSQL_PASSWORD}" ]
+if [ -n "${DUMP_MYSQL}" -a -z "${DB_PASSWORD}" ]
 then
-        echo "Error: MYSQL_PASSWORD variable not set"
+        echo "Error: DB_PASSWORD variable not set"
         usage
         exit 1
 fi
-echo "Debug: password = ${MYSQL_PASSWORD}"
+echo "Debug: password = ${DB_PASSWORD}"
 
 # Main
 case ${script_cmd} in
@@ -170,15 +174,20 @@ case ${script_cmd} in
 
                 if [ -n "${DUMP_MYSQL}" ]
                 then
-                        echo "Dump database"
-                        mysqldump -h"${MYSQL_HOST}" -u"${MYSQL_USER}" --password="${MYSQL_PASSWORD}" "${MYSQL_DATABASE}" > "${SQL_BAK_FILE}"
+                        echo "Dump MySQL "
+                        mysqldump -h"${DB_HOST}" -u"${DB_USER}" --password="${DB_PASSWORD}" "${DB_NAME}" > "${SQL_BAK_FILE}"
 
                         if [ $? -ne 0 ]
                         then
                                 echo "Error: Can't dump database"
                                 exit 1
                         fi
-                        SQL_BAK="${SQL_BAK_FILE}"
+                fi
+
+                if [ -n "${DUMP_MONGO}" ]
+                then
+                        echo "Dump MongoDB"
+                        mongodump -h "${DB_HOST}" -o "${MDB_BAK_DIR}"
                 fi
 
                 if [ -n "${COPY_VOLUME}" ]
@@ -187,7 +196,6 @@ case ${script_cmd} in
                         cd "${VOLUME_BACKUP_DIR}"
                         tar -czf "${VOL_BAK_TAR}" *
                         cd - > /dev/null
-                        VOL_BAK="${VOL_BAK_FILE}"
                 fi
 
                 echo "Create archive"
