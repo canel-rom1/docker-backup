@@ -194,7 +194,7 @@ case ${script_cmd} in
                 then
                         echo "Backup volume content"
                         cd "${VOLUME_BACKUP_DIR}"
-                        tar -czf "${VOL_BAK_TAR}" *
+                        tar -pczf "${VOL_BAK_TAR}" .
                         cd - > /dev/null
                 fi
 
