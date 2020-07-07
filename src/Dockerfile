@@ -7,6 +7,7 @@ LABEL description="Backup for WordPress"
 RUN apt-get update \
  && apt-get -y -q --no-install-recommends \
             install ca-certificates \
+                    curl \
                     mongo-tools \
                     mariadb-client \
                     wget \

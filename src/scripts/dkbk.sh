@@ -83,6 +83,9 @@ do
                 -o|--dump-mongo)
                         DUMP_MONGO=1
                         ;;
+                -O|--odoo)
+                        SCRIPT_ODOO=1
+                        ;;
                 -p|--db-password)
                         shift
                         arg_pwd="${1}"
@@ -132,6 +135,7 @@ INPUT_TAR="${TMP_DIR}/input_tar"
 [ -d "${INPUT_TAR}" ] || mkdir "${INPUT_TAR}"
 SQL_BAK_FILE="${INPUT_TAR}/${BAK_NAME}-db.$(date +%Y%m%d-%H%M%S).sql"
 MDB_BAK_DIR="${INPUT_TAR}/${BAK_NAME}-db-$(date +%Y%m%d-%H%M%S)"
+ODOO_BAK_ZIP="${INPUT_TAR}/${BAK_NAME}-db-$(date +%Y%m%d-%H%M%S).zip"
 VOL_BAK_TAR="${INPUT_TAR}/${BAK_NAME}-vols.$(date +%Y%m%d-%H%M%S).tgz"
 ALL_BAK_TAR="${TMP_DIR}/${BAK_NAME}.tar"
 
@@ -188,6 +192,17 @@ case ${script_cmd} in
                 then
                         echo "Dump MongoDB"
                         mongodump -h "${DB_HOST}" -o "${MDB_BAK_DIR}"
+                fi
+
+                if [ -n "${SCRIPT_ODOO}" ]
+                then
+                        echo "Backup DB and filestore for Odoo"
+                        curl -X POST \
+                                -F "master_pwd=${DB_PASSWORD}" \
+                                -F "name=${DB_NAME}" \
+                                -F "backup_format=zip" \
+                                -o ${ODOO_BAK_ZIP} \
+                                http://${DB_HOST}:8069/web/database/backup
                 fi
 
                 if [ -n "${COPY_VOLUME}" ]
