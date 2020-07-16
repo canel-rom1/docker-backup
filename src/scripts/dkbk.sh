@@ -22,6 +22,9 @@ echo "Debug: Command = ${script_cmd} ; argument = $@"
 while [ '-' == "${1:0:1}" ]
 do
         case "${1}" in
+                -c|--first-copy)
+                        FIRST_COPY=1
+                        ;;
                 -d|--db-name)
                         shift
                         arg_name="${1}"
@@ -207,10 +210,21 @@ case ${script_cmd} in
 
                 if [ -n "${COPY_VOLUME}" ]
                 then
-                        echo "Backup volume content"
-                        cd "${VOLUME_BACKUP_DIR}"
-                        tar -pczf "${VOL_BAK_TAR}" .
-                        cd - > /dev/null
+                        if [ -n "${FIRST_COPY}" ]
+                        then
+                                INTERMEDIATE_DIR="${TMP_DIR}/intermediate_dir"
+                                echo "Backup volume content with an intermediate copy"
+
+                                cp -a "${VOLUME_BACKUP_DIR}" "${INTERMEDIATE_DIR}"
+                                cd "${INTERMEDIATE_DIR}"
+                                tar -pczf "${VOL_BAK_TAR}" .
+                                cd - > /dev/null
+                        else
+                                echo "Backup volume content"
+                                cd "${VOLUME_BACKUP_DIR}"
+                                tar -pczf "${VOL_BAK_TAR}" .
+                                cd - > /dev/null
+                        fi
                 fi
 
                 echo "Create archive"
