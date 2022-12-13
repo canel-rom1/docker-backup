@@ -62,8 +62,8 @@ do
                         DRIVE_FILEID="${arg_fid}"
                         ;;
                 -g|--copy-gdrive)
-                        echo "Debug: Goggle drive"
-                        DRIVE_OUTPUT=1
+                        echo "Debug: Goggle drive with gdrive"
+                        GDRIVE_OUPUT=1
                         ;;
                 -h|--db-host)
                         shift
@@ -100,6 +100,19 @@ do
                         fi
 
                         DB_PASSWORD=${arg_pwd}
+                        ;;
+                -r|--rclone)
+                        shift
+                        arg_rr="${1}"
+                        if [ "${arg_rr:0:1}" = '-' ]
+                        then
+                                echo "Error: No rclone remote"
+                                usage
+                                exit 1
+                        fi
+
+                        RCLONE_REMOTE="${arg_rr}"
+                        echo "Debug: Goggle drive with rclone"
                         ;;
                 -u|--db-user)
                         shift
@@ -238,9 +251,9 @@ case ${script_cmd} in
                         cp "${ALL_BAK_TAR}" "${LOCAL_OUTPUT_DIR}"
                 fi
 
-                if [ -n "${DRIVE_OUTPUT}" ]
+                if [ -n "${GDRIVE_OUPUT}" ]
                 then
-                        echo "Copy backup on Google Drive"
+                        echo "Copy backup on Google Drive with gdrive"
                         if [ -n "${DRIVE_PARENTID}" ]
                         then
                                 gdrive upload --no-progress --parent "${DRIVE_PARENTID}" "${ALL_BAK_TAR}"
@@ -250,6 +263,12 @@ case ${script_cmd} in
                         else
                                 echo "Error: Google Drive missing arguments"
                         fi
+                fi
+
+                if [ -n "${RCLONE_REMOTE}" ]
+                then
+                        echo "Copy backup on Google Drive with rclone"
+                        rclone copy "${ALL_BAK_TAR}" "${RCLONE_REMOTE}"
                 fi
 
                 echo "Clean archive"

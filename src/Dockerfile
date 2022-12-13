@@ -6,11 +6,23 @@ LABEL description="Backup for WordPress"
 
 RUN apt-get update \
  && apt-get -y -q --no-install-recommends \
-            install ca-certificates \
+            install \
+                    apt-transport-https \
+                    ca-certificates \
                     curl \
-                    mongo-tools \
+                    dirmngr \
+                    gnupg \
                     mariadb-client \
+                    rclone \
+                    software-properties-common \
                     wget \
+ &&                 wget -O- https://www.mongodb.org/static/pgp/server-5.0.asc \
+                      | gpg --dearmor \
+                      > /usr/share/keyrings/mongodb.gpg \
+ &&                 echo 'deb [signed-by=/usr/share/keyrings/mongodb.gpg] http://repo.mongodb.org/apt/debian buster/mongodb-org/5.0 main' \
+                    > /etc/apt/sources.list.d/mongodb-org-5.0.list \
+ && apt-get update \
+ && apt-get install -y -q --no-install-recommends mongodb-org-tools \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 # && rm -rf /var/lib/apt/lists/* \
