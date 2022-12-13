@@ -3,4 +3,5 @@
 *.tar.*
 *.tgz
 
+rclone.conf
 token_v2.json*
